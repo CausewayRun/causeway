@@ -5,7 +5,7 @@ Rule enforcement and learning for Claude Code.
 ## Install
 
 ```bash
-git clone https://github.com/codimusmaximus/causeway.git && cd causeway && pip install -e .
+git clone https://github.com/codimusmaximus/causeway.git && cd causeway && uv pip install -e .
 ```
 
 ## Setup
