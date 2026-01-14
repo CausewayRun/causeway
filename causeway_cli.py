@@ -110,34 +110,30 @@ def cmd_connect():
 
     print("\nRestart Claude Code to activate.")
 
+def cmd_rulesets():
+    """List available rulesets."""
+    sys.path.insert(0, str(CAUSEWAY_DIR))
+    from rulesets import RULESETS
+
+    for name, data in RULESETS.items():
+        print(f"{name:20} {data['description']} ({len(data['rules'])} rules)")
+
 def cmd_add(ruleset: str):
     """Add a predefined ruleset."""
-    rulesets = {
-        "python-safety": [
-            {"type": "regex", "pattern": r"^pip3? install", "description": "Use uv instead of pip", "action": "warn", "tool": "Bash", "solution": "uv pip install"},
-            {"type": "regex", "pattern": r"^python [^3]", "description": "Use python3 explicitly", "action": "warn", "tool": "Bash", "solution": "python3"},
-            {"type": "regex", "pattern": r"rm -rf /", "description": "Dangerous rm command", "action": "block", "tool": "Bash"},
-        ],
-        "git-safety": [
-            {"type": "regex", "pattern": r"git push.*(--force|-f)", "description": "No force push", "action": "block", "tool": "Bash"},
-            {"type": "regex", "pattern": r"git reset --hard", "description": "Dangerous reset", "action": "warn", "tool": "Bash"},
-        ],
-        "secrets": [
-            {"type": "regex", "pattern": r"(api[_-]?key|secret|password|token)\s*[=:]\s*['\"][^'\"]+['\"]", "description": "Hardcoded secret detected", "action": "block"},
-        ],
-    }
+    sys.path.insert(0, str(CAUSEWAY_DIR))
+    from rulesets import RULESETS
+    from db import get_connection, init_db
 
-    if ruleset not in rulesets:
+    if ruleset not in RULESETS:
         print(f"Unknown ruleset: {ruleset}")
-        print(f"Available: {', '.join(rulesets.keys())}")
+        print(f"Available: {', '.join(RULESETS.keys())}")
         sys.exit(1)
 
-    sys.path.insert(0, str(CAUSEWAY_DIR))
-    from db import get_connection, init_db
     init_db()
-
     conn = get_connection()
-    for rule in rulesets[ruleset]:
+    rules = RULESETS[ruleset]["rules"]
+
+    for rule in rules:
         conn.execute("""
             INSERT INTO rules (type, pattern, description, action, tool, solution, active)
             VALUES (?, ?, ?, ?, ?, ?, 1)
@@ -146,7 +142,7 @@ def cmd_add(ruleset: str):
     conn.commit()
     conn.close()
 
-    print(f"Added {len(rulesets[ruleset])} rules from '{ruleset}'")
+    print(f"Added {len(rules)} rules from '{ruleset}'")
 
 def cmd_list():
     """List active rules."""
@@ -174,10 +170,10 @@ def main():
     usage = """causeway - rule enforcement for Claude Code
 
 Commands:
-    init        Initialize database
     connect     Add hooks & MCP to Claude Code (run from your project)
-    add <set>   Add a ruleset (python-safety, git-safety, secrets)
     list        List active rules
+    rulesets    List available rulesets
+    add <set>   Add a ruleset
     ui          Start dashboard at localhost:8000
 """
 
@@ -191,10 +187,12 @@ Commands:
         cmd_init()
     elif cmd == "connect":
         cmd_connect()
+    elif cmd == "rulesets":
+        cmd_rulesets()
     elif cmd == "add":
         if len(sys.argv) < 3:
             print("Usage: causeway add <ruleset>")
-            print("Available: python-safety, git-safety, secrets")
+            cmd_rulesets()
             sys.exit(1)
         cmd_add(sys.argv[2])
     elif cmd == "list":

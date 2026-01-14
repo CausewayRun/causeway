@@ -30,6 +30,7 @@ Restart Claude Code to activate.
 ```bash
 causeway connect     # Add hooks + MCP to current project
 causeway list        # List active rules
-causeway add <set>   # Add ruleset (python-safety, git-safety, secrets)
+causeway rulesets    # List available rulesets
+causeway add <set>   # Add a ruleset
 causeway ui          # Start dashboard
 ```
