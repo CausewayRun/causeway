@@ -7,7 +7,7 @@ import sqlite3
 from pathlib import Path
 
 app = FastAPI(title="causeway", docs_url="/api/docs")
-DB_PATH = Path(__file__).parent / "brain.db"
+DB_PATH = Path(os.environ.get("CAUSEWAY_DB", Path(__file__).parent / "brain.db"))
 
 
 def get_db():
