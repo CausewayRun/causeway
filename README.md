@@ -12,7 +12,7 @@ git clone https://github.com/codimusmaximus/causeway.git && cd causeway && uv sy
 
 ```bash
 cd your-project
-causeway connect
+uv run causeway connect
 ```
 
 Restart Claude Code to activate.
@@ -20,10 +20,10 @@ Restart Claude Code to activate.
 ## Commands
 
 ```bash
-causeway connect     # Add hooks + MCP to current project
-causeway list        # List active rules
-causeway add <set>   # Add ruleset (python-safety, git-safety, secrets)
-causeway ui          # Start dashboard
+uv run causeway connect     # Add hooks + MCP to current project
+uv run causeway list        # List active rules
+uv run causeway add <set>   # Add ruleset (python-safety, git-safety, secrets)
+uv run causeway ui          # Start dashboard
 ```
 
 ## How It Works
