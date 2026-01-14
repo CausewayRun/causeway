@@ -30,7 +30,3 @@ causeway ui          # Start dashboard
 
 - **Pre-hook**: Checks rules before every tool call (block/warn)
 - **Stop-hook**: Learns from session, creates rules automatically
-
-## License
-
-© 2025 Prismeta. All rights reserved. See [TERMS.md](TERMS.md).
