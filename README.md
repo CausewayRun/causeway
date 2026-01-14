@@ -5,14 +5,14 @@ Rule enforcement and learning for Claude Code.
 ## Install
 
 ```bash
-git clone https://github.com/codimusmaximus/causeway.git && cd causeway && uv sync
+curl -fsSL https://raw.githubusercontent.com/codimusmaximus/causeway/main/install.sh | bash
 ```
 
 ## Setup
 
 ```bash
 cd your-project
-uv run causeway connect
+causeway connect
 ```
 
 Restart Claude Code to activate.
@@ -20,10 +20,10 @@ Restart Claude Code to activate.
 ## Commands
 
 ```bash
-uv run causeway connect     # Add hooks + MCP to current project
-uv run causeway list        # List active rules
-uv run causeway add <set>   # Add ruleset (python-safety, git-safety, secrets)
-uv run causeway ui          # Start dashboard
+causeway connect     # Add hooks + MCP to current project
+causeway list        # List active rules
+causeway add <set>   # Add ruleset (python-safety, git-safety, secrets)
+causeway ui          # Start dashboard
 ```
 
 ## How It Works

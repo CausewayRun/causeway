@@ -2,7 +2,7 @@
 set -e
 
 INSTALL_DIR="$HOME/.causeway"
-REPO="https://github.com/yourusername/causeway"  # TODO: update with real repo
+REPO="https://github.com/codimusmaximus/causeway.git"
 
 echo "Installing causeway..."
 
@@ -10,43 +10,39 @@ echo "Installing causeway..."
 if ! command -v uv &> /dev/null; then
     echo "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.cargo/bin:$PATH"
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 fi
 
 # Clone or update
 if [ -d "$INSTALL_DIR" ]; then
-    echo "Updating existing installation..."
+    echo "Updating..."
     cd "$INSTALL_DIR"
     git pull --quiet
 else
-    echo "Cloning causeway..."
+    echo "Downloading..."
     git clone --quiet "$REPO" "$INSTALL_DIR"
     cd "$INSTALL_DIR"
 fi
 
 # Install dependencies
 echo "Installing dependencies..."
-uv sync --quiet
+uv sync --quiet 2>/dev/null || uv sync
 
-# Init database
-uv run python -c "from db import init_db; init_db()"
-
-# Create symlink
-echo "Creating symlink..."
+# Create wrapper script
 mkdir -p "$HOME/.local/bin"
-ln -sf "$INSTALL_DIR/causeway" "$HOME/.local/bin/causeway"
-chmod +x "$INSTALL_DIR/causeway"
+cat > "$HOME/.local/bin/causeway" << 'EOF'
+#!/bin/bash
+exec uv run --directory "$HOME/.causeway" causeway "$@"
+EOF
+chmod +x "$HOME/.local/bin/causeway"
 
-# Check if ~/.local/bin is in PATH
+# Add to PATH if needed
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    echo ""
-    echo "Add to your shell config:"
-    echo '  export PATH="$HOME/.local/bin:$PATH"'
-    echo ""
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc" 2>/dev/null || true
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc" 2>/dev/null || true
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 echo ""
-echo "Done! Now run:"
-echo "  cd your-project"
-echo "  causeway connect"
+echo "Done! Run: causeway connect"
 echo ""
