@@ -1,0 +1,8 @@
+claude-agent-sdk
+sqlite-vec
+numpy
+mcp
+pydantic-ai
+sentence-transformers
+fastapi
+uvicorn
