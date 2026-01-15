@@ -5,7 +5,12 @@ from pydantic import BaseModel
 from typing import Optional
 import os
 import sqlite3
+import urllib.request
+import json
 from pathlib import Path
+
+VERSION = "0.1.0"
+API_URL = "https://causeway-api.fly.dev"
 
 app = FastAPI(title="causeway", docs_url="/api/docs")
 DB_PATH = Path(os.environ.get("CAUSEWAY_DB", Path(__file__).parent / "brain.db"))
@@ -336,6 +341,26 @@ def update_setting(key: str, body: dict):
     return {"ok": True}
 
 
+@app.get("/api/version")
+def get_version():
+    """Check current version and if update is available."""
+    result = {"version": VERSION, "update_available": False, "latest_version": None}
+    try:
+        req = urllib.request.Request(
+            f"{API_URL}/ping",
+            data=json.dumps({"version": VERSION, "platform": "web"}).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode())
+            result["update_available"] = data.get("update_available", False)
+            result["latest_version"] = data.get("latest_version")
+    except Exception:
+        pass
+    return result
+
+
 HTML = '''<!DOCTYPE html>
 <html>
 <head>
@@ -441,10 +466,26 @@ HTML = '''<!DOCTYPE html>
         .settings-section { background: #1a1a1a; padding: 16px; border-radius: 8px; }
         .settings-section h3 { font-size: 12px; color: #888; margin-bottom: 12px; text-transform: uppercase; }
         .settings-section textarea { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; min-height: 200px; }
+
+        .banner { display: none; padding: 10px 16px; background: linear-gradient(90deg, #4f46e5, #7c3aed); border-radius: 6px; margin-bottom: 16px; align-items: center; gap: 12px; }
+        .banner.show { display: flex; }
+        .banner-text { flex: 1; font-size: 12px; }
+        .banner-text strong { color: #fff; }
+        .banner-btn { background: rgba(255,255,255,0.2); color: #fff; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font: inherit; font-size: 11px; }
+        .banner-btn:hover { background: rgba(255,255,255,0.3); }
+        .banner-close { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 16px; padding: 0 4px; }
+        .banner-close:hover { color: #fff; }
     </style>
 </head>
 <body>
     <h1>causeway</h1>
+
+    <div class="banner" id="update-banner">
+        <div class="banner-text">
+            <strong>Update available!</strong> Version <span id="latest-version"></span> is ready. Run <code>causeway update</code> to install.
+        </div>
+        <button class="banner-close" onclick="dismissBanner()">&times;</button>
+    </div>
 
     <div class="tabs">
         <div class="tab active" onclick="showTab('rules')">rules</div>
@@ -911,7 +952,24 @@ async function saveSetting(key, value) {
     });
 }
 
+async function checkForUpdates() {
+    if (localStorage.getItem('dismissedUpdate')) return;
+    try {
+        const data = await fetch('/api/version').then(r => r.json());
+        if (data.update_available && data.latest_version) {
+            document.getElementById('latest-version').textContent = data.latest_version;
+            document.getElementById('update-banner').classList.add('show');
+        }
+    } catch (e) {}
+}
+
+function dismissBanner() {
+    document.getElementById('update-banner').classList.remove('show');
+    localStorage.setItem('dismissedUpdate', Date.now());
+}
+
 load();
+checkForUpdates();
 </script>
 </body>
 </html>'''

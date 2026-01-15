@@ -58,7 +58,7 @@ def cmd_connect():
     # Pre-tool hook: check rules before execution
     hooks["PreToolUse"] = [
         {
-            "matcher": "",
+            "matcher": {},
             "hooks": [{"type": "command", "command": f"uv run --directory {CAUSEWAY_DIR} python3 {CAUSEWAY_DIR}/scripts/check_rules.py"}]
         }
     ]
@@ -66,8 +66,16 @@ def cmd_connect():
     # Stop hook: learn from session after it ends
     hooks["Stop"] = [
         {
-            "matcher": "",
+            "matcher": {},
             "hooks": [{"type": "command", "command": f"uv run --directory {CAUSEWAY_DIR} python3 {CAUSEWAY_DIR}/learning_agent.py"}]
+        }
+    ]
+
+    # SessionStart hook: version check and telemetry (curl only, no deps)
+    hooks["SessionStart"] = [
+        {
+            "matcher": "*",
+            "hooks": [{"type": "command", "command": f"bash {CAUSEWAY_DIR}/scripts/ping.sh"}]
         }
     ]
 
