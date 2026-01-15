@@ -12,11 +12,8 @@ from dotenv import load_dotenv
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(project_root, '.env'))
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from rule_agent import check_with_agent, sync_all_rule_embeddings
-from db import init_db, get_connection
+from causeway.rule_agent import check_with_agent, sync_all_rule_embeddings
+from causeway.db import init_db, get_connection
 
 
 def log_trace(tool_name: str, tool_input: str, rules_checked: int, rules_matched: int,
@@ -108,6 +105,10 @@ def main():
 
     log_trace(tool_name, tool_input_str, rules_checked, len(matched_ids), matched_ids,
               action, comment, duration_ms)
+
+    # If the agent approved, allow regardless of action type
+    if allowed:
+        sys.exit(0)
 
     if action == "block":
         # Exit code 2 = block, stderr shown to Claude

@@ -8,11 +8,8 @@ import pytest
 TEST_DB = tempfile.mktemp(suffix='.db')
 os.environ['CAUSEWAY_DB'] = TEST_DB
 
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from db import init_db, get_connection
-from history_logger import (
+from causeway.db import init_db, get_connection
+from causeway.history_logger import (
     log_transcript, get_or_create_project, get_or_create_session,
     extract_text_content, extract_tool_calls
 )

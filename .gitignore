@@ -4,6 +4,9 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+dist/
+build/
+*.egg
 
 # Database
 *.db
@@ -13,16 +16,27 @@ venv/
 
 # OS
 .DS_Store
+Thumbs.db
 
 # IDE
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# Env
+# Environment
 .env
+.install_id
 
-# Claude Code
+# Claude Code local config
 .claude/
+.mcp.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Misc
-CV
+*.bak
+*.tmp

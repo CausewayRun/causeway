@@ -7,10 +7,7 @@ import pytest
 TEST_DB = tempfile.mktemp(suffix='.db')
 os.environ['CAUSEWAY_DB'] = TEST_DB
 
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from db import init_db, get_connection
+from causeway.db import init_db, get_connection
 
 
 @pytest.fixture(autouse=True)

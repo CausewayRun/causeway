@@ -3,7 +3,7 @@ import asyncio
 from pathlib import Path
 from claude_agent_sdk import tool, create_sdk_mcp_server, query, ClaudeAgentOptions
 
-from db import get_connection, init_db
+from .db import get_connection, init_db
 
 SCHEMA_DOC = Path(__file__).parent / "schema.md"
 

@@ -10,7 +10,7 @@ from openai import OpenAI
 
 load_dotenv(Path(__file__).parent / ".env")
 
-from db import get_connection, init_db, serialize_vector
+from .db import get_connection, init_db, serialize_vector
 
 _openai_client = None
 

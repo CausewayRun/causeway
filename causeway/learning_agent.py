@@ -12,9 +12,9 @@ from pydantic_ai import Agent
 # Load .env from causeway directory
 load_dotenv(Path(__file__).parent / ".env")
 
-from db import init_db, get_connection
-from brain_mcp import call_tool
-from history_logger import log_transcript
+from .db import init_db, get_connection
+from .mcp import call_tool
+from .history_logger import log_transcript
 
 
 def log_trace(transcript_path: str, rules_created: int, rules_updated: int, rules_deleted: int,

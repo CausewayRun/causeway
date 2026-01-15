@@ -7,11 +7,8 @@ import pytest
 TEST_DB = tempfile.mktemp(suffix='.db')
 os.environ['CAUSEWAY_DB'] = TEST_DB
 
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from db import init_db, get_connection
-from rule_agent import check_regex_rules
+from causeway.db import init_db, get_connection
+from causeway.rule_agent import check_regex_rules
 
 
 @pytest.fixture(autouse=True)
