@@ -3,7 +3,7 @@ import json
 import os
 import re
 from pathlib import Path
-from db import get_connection, init_db
+from .db import get_connection, init_db
 
 
 def get_or_create_project(conn, project_path: str) -> int:

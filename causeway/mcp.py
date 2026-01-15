@@ -1,8 +1,8 @@
 """MCP server for nano_brain - search and manage thoughts."""
 import json
 import sqlite3
-from db import get_connection, init_db, serialize_vector
-from rule_agent import ensure_rule_embedding
+from .db import get_connection, init_db, serialize_vector
+from .rule_agent import ensure_rule_embedding
 
 try:
     from mcp.server import Server
