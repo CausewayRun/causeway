@@ -23,6 +23,7 @@ venv/
 
 # Claude Code
 .claude/
+.mcp.json
 
 # Misc
 CV
