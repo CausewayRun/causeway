@@ -421,6 +421,11 @@ def main():
     """Entry point for Stop hook - forks to background immediately."""
     import subprocess
 
+    # Handle --learn argument (background mode)
+    if len(sys.argv) >= 3 and sys.argv[1] == "--learn":
+        run_learning(sys.argv[2])
+        return
+
     debug_log = Path(__file__).parent / "hook_debug.log"
 
     def log(msg):
@@ -447,8 +452,9 @@ def main():
 
     # Fork to background and exit immediately
     log("Forking to background...")
+    causeway_root = Path(__file__).parent.parent  # Go up from causeway/ to project root
     subprocess.Popen(
-        ["uv", "run", "--directory", str(Path(__file__).parent), "python3", __file__, "--learn", transcript_path],
+        ["uv", "run", "--directory", str(causeway_root), "causeway-learn", "--learn", transcript_path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True
@@ -458,9 +464,4 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3 and sys.argv[1] == "--learn":
-        # Background mode: actually run the learning
-        run_learning(sys.argv[2])
-    else:
-        # Hook mode: fork and exit
-        main()
+    main()

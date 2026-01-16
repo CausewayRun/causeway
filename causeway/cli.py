@@ -12,7 +12,8 @@ from pathlib import Path
 API_URL = "https://causeway-api.fly.dev"
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
-CAUSEWAY_DIR = Path(__file__).parent.resolve()
+CAUSEWAY_DIR = Path(__file__).parent.resolve()  # Package dir: ~/.causeway/causeway
+CAUSEWAY_ROOT = CAUSEWAY_DIR.parent  # Project root: ~/.causeway (where pyproject.toml is)
 ORIG_CWD = os.environ.get("CAUSEWAY_CWD") or os.getcwd()
 
 # Re-exec with uv if dependencies missing
@@ -245,7 +246,7 @@ def cmd_connect():
     hooks["PreToolUse"] = [
         {
             "matcher": "*",
-            "hooks": [{"type": "command", "command": f"uv run --directory {CAUSEWAY_DIR} python3 {CAUSEWAY_DIR}/hooks/check_rules.py"}]
+            "hooks": [{"type": "command", "command": f"uv run --directory {CAUSEWAY_ROOT} causeway-check"}]
         }
     ]
 
@@ -253,7 +254,7 @@ def cmd_connect():
     hooks["Stop"] = [
         {
             "matcher": "*",
-            "hooks": [{"type": "command", "command": f"uv run --directory {CAUSEWAY_DIR} python3 {CAUSEWAY_DIR}/learning_agent.py"}]
+            "hooks": [{"type": "command", "command": f"uv run --directory {CAUSEWAY_ROOT} causeway-learn"}]
         }
     ]
 
@@ -278,7 +279,7 @@ def cmd_connect():
 
     servers["causeway"] = {
         "command": "uv",
-        "args": ["run", "--directory", str(CAUSEWAY_DIR), "python3", str(CAUSEWAY_DIR / "mcp.py")],
+        "args": ["run", "--directory", str(CAUSEWAY_ROOT), "causeway-mcp"],
         "env": {"CAUSEWAY_DB": str(CAUSEWAY_DIR / "brain.db")}
     }
 
@@ -295,7 +296,7 @@ def cmd_connect():
     mcp_servers["causeway"] = {
         "type": "stdio",
         "command": "uv",
-        "args": ["run", "--directory", str(CAUSEWAY_DIR), "python3", str(CAUSEWAY_DIR / "mcp.py")],
+        "args": ["run", "--directory", str(CAUSEWAY_ROOT), "causeway-mcp"],
         "env": {"CAUSEWAY_DB": str(CAUSEWAY_DIR / "brain.db")}
     }
 

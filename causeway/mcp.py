@@ -495,6 +495,11 @@ async def main():
         await server.run(read_stream, write_stream, server.create_initialization_options())
 
 
-if __name__ == "__main__":
+def run():
+    """Entry point for causeway-mcp command."""
     import asyncio
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    run()

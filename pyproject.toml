@@ -21,6 +21,9 @@ dev = ["pytest", "pytest-asyncio"]
 
 [project.scripts]
 causeway = "causeway.cli:main"
+causeway-mcp = "causeway.mcp:run"
+causeway-check = "causeway.hooks.check_rules:main"
+causeway-learn = "causeway.learning_agent:main"
 
 [build-system]
 requires = ["hatchling"]
