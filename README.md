@@ -4,7 +4,7 @@ A self-learning hooks system for Claude Code.
 
 Causeway watches your Claude Code sessions and automatically learns your preferences. When you correct Claude or express a preference, Causeway captures it as a rule and enforces it in future sessions.
 
-![Causeway Dashboard](screen.png)
+![Causeway Dashboard](docs/screen.png)
 
 ## How It Works
 
@@ -34,3 +34,7 @@ causeway rulesets    # List available rulesets
 causeway add <set>   # Add a ruleset
 causeway ui          # Start dashboard
 ```
+
+## Telemetry
+
+Causeway pings our API to track installs and check for updates. See [`causeway/hooks/ping.sh`](causeway/hooks/ping.sh)
