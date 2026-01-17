@@ -316,7 +316,7 @@ DO NOT CREATE rules for:
 Default to empty list. Only create with clear justification."""
 
 DEFAULTS = {
-    'eval_model': 'openai:gpt-4o',
+    'eval_model': 'openai:gpt-4o-mini',
     'eval_prompt': DEFAULT_EVAL_PROMPT,
     'learn_model': 'openai:gpt-5',
     'learn_prompt': DEFAULT_LEARN_PROMPT,

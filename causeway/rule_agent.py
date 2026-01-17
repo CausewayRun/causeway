@@ -80,7 +80,7 @@ def get_setting(key: str, default: str) -> str:
 def get_rule_agent() -> Agent:
     global _rule_agent
     # Always recreate to pick up settings changes
-    model = get_setting('eval_model', 'openai:gpt-4o')
+    model = get_setting('eval_model', 'openai:gpt-4o-mini')  # OVERRIDE: user explicitly requested gpt-4o-mini
     prompt = get_setting('eval_prompt', SYSTEM_PROMPT)
     _rule_agent = Agent(
         model,
