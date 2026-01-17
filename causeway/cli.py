@@ -100,23 +100,6 @@ def validate_api_key(provider: str, api_key: str) -> tuple[bool, str]:
             )
             urllib.request.urlopen(req, timeout=10)
             return True, "Valid"
-        elif provider == "anthropic":
-            req = urllib.request.Request(
-                "https://api.anthropic.com/v1/messages",
-                data=json.dumps({
-                    "model": "claude-3-haiku-20240307",
-                    "max_tokens": 1,
-                    "messages": [{"role": "user", "content": "hi"}]
-                }).encode(),
-                headers={
-                    "x-api-key": api_key,
-                    "anthropic-version": "2023-06-01",
-                    "Content-Type": "application/json"
-                },
-                method="POST"
-            )
-            urllib.request.urlopen(req, timeout=10)
-            return True, "Valid"
     except urllib.error.HTTPError as e:
         if e.code == 401:
             return False, "Invalid API key"
@@ -139,7 +122,7 @@ def interactive_setup():
     config = load_config()
 
     # Check if already configured
-    if config.get("CAUSEWAY_EMAIL") and (config.get("OPENAI_API_KEY") or config.get("ANTHROPIC_API_KEY")):
+    if config.get("CAUSEWAY_EMAIL") and config.get("OPENAI_API_KEY"):
         console.print("[dim]Already configured. Skipping setup.[/dim]\n")
         return config
 
@@ -163,32 +146,15 @@ def interactive_setup():
             console.print("[red]Please enter a valid email address.[/red]")
         console.print()
 
-    # Provider selection
+    # Provider selection (OpenAI only)
     provider = config.get("CAUSEWAY_PROVIDER", "")
     if not provider:
-        console.print("[bold]Select your LLM provider[/bold] [dim](for rule evaluation)[/dim]\n")
-        console.print("  [cyan]1[/cyan]  OpenAI [dim](recommended)[/dim]")
-        console.print("  [cyan]2[/cyan]  Anthropic")
-        console.print()
-        while True:
-            choice = Prompt.ask("Enter [cyan]1[/cyan] or [cyan]2[/cyan]")
-            if choice == "1":
-                provider = "openai"
-                break
-            elif choice == "2":
-                provider = "anthropic"
-                break
-            console.print("[red]Please enter 1 or 2.[/red]")
+        provider = "openai"
         config["CAUSEWAY_PROVIDER"] = provider
-        console.print()
 
     # API Key
-    if provider == "anthropic":
-        key_name = "ANTHROPIC_API_KEY"
-        key_display = "Anthropic"
-    else:
-        key_name = "OPENAI_API_KEY"
-        key_display = "OpenAI"
+    key_name = "OPENAI_API_KEY"
+    key_display = "OpenAI"
 
     if not config.get(key_name):
         from rich.status import Status
@@ -391,7 +357,7 @@ def cmd_setup(reset: bool = False):
             f"[bold]Current Configuration[/bold]\n\n"
             f"Email:    [cyan]{config.get('CAUSEWAY_EMAIL', '[not set]')}[/cyan]\n"
             f"Provider: [cyan]{config.get('CAUSEWAY_PROVIDER', '[not set]')}[/cyan]\n"
-            f"API Key:  [cyan]{'configured' if config.get('OPENAI_API_KEY') or config.get('ANTHROPIC_API_KEY') else '[not set]'}[/cyan]",
+            f"API Key:  [cyan]{'configured' if config.get('OPENAI_API_KEY') else '[not set]'}[/cyan]",
             border_style="dim"
         ))
         console.print()
@@ -403,7 +369,6 @@ def cmd_setup(reset: bool = False):
         config.pop("CAUSEWAY_EMAIL", None)
         config.pop("CAUSEWAY_PROVIDER", None)
         config.pop("OPENAI_API_KEY", None)
-        config.pop("ANTHROPIC_API_KEY", None)
 
     # Run the setup wizard
     console.print()
@@ -423,26 +388,13 @@ def cmd_setup(reset: bool = False):
         console.print("[red]Please enter a valid email address.[/red]")
     console.print()
 
-    # Provider
-    console.print("[bold]Select your LLM provider[/bold] [dim](for rule evaluation)[/dim]\n")
-    console.print("  [cyan]1[/cyan]  OpenAI [dim](recommended)[/dim]")
-    console.print("  [cyan]2[/cyan]  Anthropic")
-    console.print()
-    while True:
-        choice = Prompt.ask("Enter [cyan]1[/cyan] or [cyan]2[/cyan]")
-        if choice == "1":
-            provider = "openai"
-            break
-        elif choice == "2":
-            provider = "anthropic"
-            break
-        console.print("[red]Please enter 1 or 2.[/red]")
+    # Provider (OpenAI only)
+    provider = "openai"
     config["CAUSEWAY_PROVIDER"] = provider
-    console.print()
 
     # API Key
-    key_name = "ANTHROPIC_API_KEY" if provider == "anthropic" else "OPENAI_API_KEY"
-    key_display = "Anthropic" if provider == "anthropic" else "OpenAI"
+    key_name = "OPENAI_API_KEY"
+    key_display = "OpenAI"
 
     import getpass
     while True:
