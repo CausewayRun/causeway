@@ -42,6 +42,90 @@ def extract_rule_ids(comment: str) -> list[int]:
     return [int(m) for m in re.findall(r'#(\d+)', comment or '')]
 
 
+def format_blocked_output(action: str, comment: str) -> str:
+    """Format a pretty ASCII box for blocked/warned actions."""
+    is_block = action == "block"
+
+    # Parse rule info from comment
+    # Format: "[BLOCK #5] description → solution" or "[WARN #5] description → solution"
+    lines = []
+    for line in comment.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+
+        # Extract rule ID, description, and solution
+        match = re.match(r'\[(BLOCK|WARN)\s+#(\d+)\]\s*(.+)', line)
+        if match:
+            rule_type, rule_id, rest = match.groups()
+            # Strip redundant "Rule #X (SOFT/HARD):" prefix from description
+            rest = re.sub(r'^Rule\s+#\d+\s*\((SOFT|HARD)\):\s*', '', rest)
+            if ' → ' in rest:
+                desc, solution = rest.split(' → ', 1)
+            else:
+                desc, solution = rest, None
+            lines.append({
+                'type': rule_type,
+                'id': rule_id,
+                'desc': desc.strip(),
+                'solution': solution.strip() if solution else None
+            })
+        else:
+            # Fallback for non-standard format
+            lines.append({'type': action.upper(), 'id': '?', 'desc': line, 'solution': None})
+
+    # Build the output
+    output = []
+    width = 70
+
+    # Collect rule IDs for header
+    rule_ids = [rule['id'] for rule in lines if rule['id'] != '?']
+    rule_id_str = ', '.join(f"#{rid}" for rid in rule_ids) if rule_ids else ""
+
+    # Header with rule number(s)
+    if is_block:
+        if rule_id_str:
+            header = f" CAUSEWAY BLOCKED TOOL USE — RULE {rule_id_str} "
+        else:
+            header = " CAUSEWAY BLOCKED TOOL USE "
+        output.append(f"{'=' * width}")
+        output.append(f"{header:^{width}}")
+        output.append(f"{'=' * width}")
+    else:
+        if rule_id_str:
+            header = f" CAUSEWAY WARNING — RULE {rule_id_str} "
+        else:
+            header = " CAUSEWAY WARNING "
+        output.append(f"{'-' * width}")
+        output.append(f"{header:^{width}}")
+        output.append(f"{'-' * width}")
+
+    output.append("")
+
+    # Rule details
+    for i, rule in enumerate(lines):
+        if i > 0:
+            output.append("")
+
+        output.append(f"  Rule description: {rule['desc']}")
+        if rule['solution']:
+            output.append(f"  Suggested solution: {rule['solution']}")
+
+    output.append("")
+
+    # Footer
+    if is_block:
+        output.append("  This is a HARD rule and cannot be overridden.")
+        output.append("")
+        output.append(f"{'=' * width}")
+    else:
+        output.append("  To override: include 'OVERRIDE: <reason>' in description")
+        output.append("")
+        output.append(f"{'-' * width}")
+
+    return '\n'.join(['', ''] + output)
+
+
 async def check_rules_async(tool_name: str, tool_input: str, justification: str = None) -> tuple[bool, str, str]:
     """
     Check if tool input violates any rules using the AI agent.
@@ -89,7 +173,8 @@ def main():
     except Exception as e:
         duration_ms = int((time.time() - start_time) * 1000)
         log_trace(tool_name, tool_input_str, 0, 0, [], 'error', str(e), duration_ms)
-        print(f"BLOCKED: Rule check error: {e}", file=sys.stderr)
+        # Use exit code 2 with stderr to block tool execution
+        print(format_blocked_output("block", f"[BLOCK #0] Rule check error: {e}"), file=sys.stderr)
         sys.exit(2)
 
     duration_ms = int((time.time() - start_time) * 1000)
@@ -111,18 +196,28 @@ def main():
         sys.exit(0)
 
     if action == "block":
-        # Exit code 2 = block, stderr shown to Claude
-        # Hard rules cannot be overridden
-        print(f"BLOCKED: {comment}", file=sys.stderr)
-        print("This is a hard rule and cannot be overridden.", file=sys.stderr)
-        sys.exit(2)
+        # Use hookSpecificOutput with permissionDecision: "deny" to prevent tool execution
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": format_blocked_output("block", comment)
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
 
     if action == "warn":
-        # Exit code 2 = also block, but with suggestion instead of hard rejection
-        # Soft rules can be overridden with justification
-        print(f"SUGGESTION: {comment}", file=sys.stderr)
-        print("To override: start your description with 'OVERRIDE:' followed by justification.", file=sys.stderr)
-        sys.exit(2)
+        # For warnings, also deny but with different formatting
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": format_blocked_output("warn", comment)
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
 
     # Exit 0 to allow the action
     sys.exit(0)
