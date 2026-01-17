@@ -76,7 +76,6 @@ def format_blocked_output(action: str, comment: str) -> str:
 
     # Build the output
     output = []
-    width = 70
 
     # Collect rule IDs for header
     rule_ids = [rule['id'] for rule in lines if rule['id'] != '?']
@@ -85,21 +84,16 @@ def format_blocked_output(action: str, comment: str) -> str:
     # Header with rule number(s)
     if is_block:
         if rule_id_str:
-            header = f" CAUSEWAY BLOCKED TOOL USE — RULE {rule_id_str} "
+            header = f"CAUSEWAY BLOCKED TOOL USE — RULE {rule_id_str}"
         else:
-            header = " CAUSEWAY BLOCKED TOOL USE "
-        output.append(f"{'=' * width}")
-        output.append(f"{header:^{width}}")
-        output.append(f"{'=' * width}")
+            header = "CAUSEWAY BLOCKED TOOL USE"
     else:
         if rule_id_str:
-            header = f" CAUSEWAY WARNING — RULE {rule_id_str} "
+            header = f"CAUSEWAY FLAGGED TOOL USE — RULE {rule_id_str}"
         else:
-            header = " CAUSEWAY WARNING "
-        output.append(f"{'-' * width}")
-        output.append(f"{header:^{width}}")
-        output.append(f"{'-' * width}")
+            header = "CAUSEWAY FLAGGED TOOL USE"
 
+    output.append(header)
     output.append("")
 
     # Rule details
@@ -107,21 +101,9 @@ def format_blocked_output(action: str, comment: str) -> str:
         if i > 0:
             output.append("")
 
-        output.append(f"  Rule description: {rule['desc']}")
+        output.append(f"  Description: {rule['desc']}")
         if rule['solution']:
             output.append(f"  Suggested solution: {rule['solution']}")
-
-    output.append("")
-
-    # Footer
-    if is_block:
-        output.append("  This is a HARD rule and cannot be overridden.")
-        output.append("")
-        output.append(f"{'=' * width}")
-    else:
-        output.append("  To override: include 'OVERRIDE: <reason>' in description")
-        output.append("")
-        output.append(f"{'-' * width}")
 
     return '\n'.join(['', ''] + output)
 
