@@ -363,8 +363,10 @@ def cmd_list():
 
 def cmd_ui():
     """Start the dashboard UI."""
+    env = os.environ.copy()
+    env["CAUSEWAY_CWD"] = ORIG_CWD
     os.chdir(CAUSEWAY_DIR)
-    os.execvp("python3", ["python3", "server.py"])
+    os.execvpe("python3", ["python3", "server.py"], env)
 
 
 def cmd_setup(reset: bool = False):
