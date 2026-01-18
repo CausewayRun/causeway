@@ -1,6 +1,6 @@
 [project]
 name = "causeway"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Rule enforcement and learning for Claude Code"
 requires-python = ">=3.10"
 dependencies = [
@@ -26,8 +26,11 @@ causeway-check = "causeway.hooks.check_rules:main"
 causeway-learn = "causeway.learning_agent:main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["causeway"]

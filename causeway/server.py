@@ -12,10 +12,12 @@ from pathlib import Path
 # Handle both direct execution and module import
 try:
     from .db import get_db_path
+    from .version import get_local_version, check_for_updates
 except ImportError:
     from db import get_db_path
+    from version import get_local_version, check_for_updates
 
-VERSION = "0.1.0"
+VERSION = get_local_version()
 API_URL = "https://causeway-api.fly.dev"
 
 app = FastAPI(title="causeway", docs_url="/api/docs")
@@ -350,21 +352,14 @@ def update_setting(key: str, body: dict):
 @app.get("/api/version")
 def get_version():
     """Check current version and if update is available."""
-    result = {"version": VERSION, "update_available": False, "latest_version": None}
-    try:
-        req = urllib.request.Request(
-            f"{API_URL}/ping",
-            data=json.dumps({"version": VERSION, "platform": "web"}).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode())
-            result["update_available"] = data.get("update_available", False)
-            result["latest_version"] = data.get("latest_version")
-    except Exception:
-        pass
-    return result
+    update_info = check_for_updates()
+    return {
+        "version": update_info["current_version"],
+        "update_available": update_info["update_available"],
+        "latest_version": update_info["latest_version"],
+        "on_edge": update_info["on_edge"],
+        "release_url": update_info["release_url"],
+    }
 
 
 HTML = '''<!DOCTYPE html>

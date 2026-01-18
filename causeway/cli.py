@@ -335,6 +335,140 @@ def cmd_ui():
     os.execvpe("python3", ["python3", "server.py"], env)
 
 
+def cmd_update(edge: bool = False):
+    """Update causeway to latest version or edge."""
+    from rich.console import Console
+    from rich.panel import Panel
+
+    console = Console()
+
+    sys.path.insert(0, str(CAUSEWAY_DIR))
+    from version import get_local_version, check_for_updates, clear_version_cache
+
+    current = get_local_version()
+    console.print(f"[dim]Current version:[/dim] {current}")
+
+    if edge:
+        # Update to edge (main branch)
+        console.print("[dim]Updating to edge (main branch)...[/dim]")
+        try:
+            # Fetch and reset to origin/main
+            result = subprocess.run(
+                ["git", "fetch", "origin", "main"],
+                cwd=CAUSEWAY_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                console.print(f"[red]Failed to fetch:[/red] {result.stderr}")
+                sys.exit(1)
+
+            result = subprocess.run(
+                ["git", "reset", "--hard", "origin/main"],
+                cwd=CAUSEWAY_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                console.print(f"[red]Failed to reset:[/red] {result.stderr}")
+                sys.exit(1)
+
+            # Reinstall dependencies
+            _reinstall_deps(console)
+
+            clear_version_cache()
+            new_version = get_local_version()
+            console.print()
+            console.print(Panel.fit(
+                f"[bold green]Updated to edge![/bold green]\n[dim]Now at:[/dim] {new_version}",
+                border_style="green"
+            ))
+        except Exception as e:
+            console.print(f"[red]Update failed:[/red] {e}")
+            console.print("[dim]Try running 'git pull' manually in ~/.causeway[/dim]")
+            sys.exit(1)
+    else:
+        # Check for updates
+        update_info = check_for_updates()
+
+        if update_info["on_edge"]:
+            console.print("[yellow]You are on edge (ahead of latest release)[/yellow]")
+
+        if not update_info["update_available"]:
+            console.print("[green]Already up to date![/green]")
+            return
+
+        latest = update_info["latest_version"]
+        console.print(f"[cyan]New version available:[/cyan] {latest}")
+
+        try:
+            # Fetch tags and checkout the new version
+            result = subprocess.run(
+                ["git", "fetch", "--tags"],
+                cwd=CAUSEWAY_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                console.print(f"[red]Failed to fetch tags:[/red] {result.stderr}")
+                sys.exit(1)
+
+            result = subprocess.run(
+                ["git", "checkout", latest],
+                cwd=CAUSEWAY_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                console.print(f"[red]Failed to checkout {latest}:[/red] {result.stderr}")
+                sys.exit(1)
+
+            # Reinstall dependencies
+            _reinstall_deps(console)
+
+            clear_version_cache()
+            new_version = get_local_version()
+            console.print()
+            console.print(Panel.fit(
+                f"[bold green]Updated to {latest}![/bold green]\n[dim]Now at:[/dim] {new_version}",
+                border_style="green"
+            ))
+        except Exception as e:
+            console.print(f"[red]Update failed:[/red] {e}")
+            console.print("[dim]Try running 'git pull' manually in ~/.causeway[/dim]")
+            sys.exit(1)
+
+
+def _reinstall_deps(console):
+    """Reinstall dependencies using uv or pip."""
+    # Detect if uv is available (preferred)
+    uv_available = subprocess.run(
+        ["which", "uv"],
+        capture_output=True,
+    ).returncode == 0
+
+    console.print("[dim]Reinstalling dependencies...[/dim]")
+
+    if uv_available:
+        result = subprocess.run(
+            ["uv", "sync"],
+            cwd=CAUSEWAY_ROOT,
+            capture_output=True,
+            text=True,
+        )
+    else:
+        # Fall back to pip
+        result = subprocess.run(
+            ["pip", "install", "-e", "."],
+            cwd=CAUSEWAY_ROOT,
+            capture_output=True,
+            text=True,
+        )
+
+    if result.returncode != 0:
+        console.print(f"[yellow]Warning: dependency install had issues:[/yellow] {result.stderr[:200]}")
+
+
 def cmd_setup(reset: bool = False):
     """Run setup wizard. Use --reset to reconfigure everything."""
     from rich.console import Console
@@ -433,6 +567,8 @@ Commands:
     connect        Add hooks & MCP to Claude Code (run from your project)
     setup          Reconfigure email, provider, and API key
     setup --reset  Reset all configuration
+    update         Update to latest release
+    update --edge  Update to latest main branch (edge)
     list           List active rules
     rulesets       List available rulesets
     add <set>      Add a ruleset
@@ -452,6 +588,9 @@ Commands:
     elif cmd == "setup":
         reset = "--reset" in sys.argv
         cmd_setup(reset=reset)
+    elif cmd == "update":
+        edge = "--edge" in sys.argv
+        cmd_update(edge=edge)
     elif cmd == "rulesets":
         cmd_rulesets()
     elif cmd == "add":
