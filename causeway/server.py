@@ -13,9 +13,11 @@ from pathlib import Path
 try:
     from .db import get_db_path
     from .version import get_local_version, check_for_updates
+    from .rule_agent import update_rule_embedding
 except ImportError:
     from db import get_db_path
     from version import get_local_version, check_for_updates
+    from rule_agent import update_rule_embedding
 
 VERSION = get_local_version()
 API_URL = "https://causeway-api.fly.dev"
@@ -94,6 +96,14 @@ def create_rule(rule: RuleCreate):
     conn.commit()
     rule_id = cursor.lastrowid
     conn.close()
+
+    # Generate embedding if semantic
+    if rule.type == 'semantic':
+        try:
+            update_rule_embedding(rule_id, rule.description)
+        except Exception as e:
+            print(f"Failed to generate embedding for rule {rule_id}: {e}")
+
     return {"id": rule_id}
 
 
@@ -118,7 +128,21 @@ def update_rule(rule_id: int, rule: RuleUpdate):
         values.append(rule_id)
         conn.execute(f"UPDATE rules SET {', '.join(updates)} WHERE id = ?", values)
         conn.commit()
+    
     conn.close()
+
+    # Update embedding if description changed and it's a semantic rule
+    # We need to check if type is semantic (either in update or existing)
+    conn = get_db()
+    current = conn.execute("SELECT type, description FROM rules WHERE id = ?", (rule_id,)).fetchone()
+    conn.close()
+
+    if current['type'] == 'semantic' and (rule.description or rule.type == 'semantic'):
+        try:
+            update_rule_embedding(rule_id, current['description'])
+        except Exception as e:
+            print(f"Failed to update embedding for rule {rule_id}: {e}")
+
     return {"ok": True}
 
 

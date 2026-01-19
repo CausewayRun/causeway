@@ -390,6 +390,23 @@ Violates any rule?""")
     return result.output
 
 
+
+def update_rule_embedding(rule_id: int, description: str):
+    """Update or create embedding for a rule."""
+    conn = get_connection()
+    try:
+        embedding = generate_embedding(description)
+        embedding_bytes = serialize_vector(embedding)
+
+        conn.execute("""
+            INSERT OR REPLACE INTO rule_embeddings (rule_id, embedding) 
+            VALUES (?, ?)
+        """, (rule_id, embedding_bytes))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_rule_embedding(rule_id: int, description: str):
     """Ensure a rule has an embedding."""
     conn = get_connection()
