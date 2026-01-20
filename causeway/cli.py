@@ -585,6 +585,9 @@ def cmd_setup(reset: bool = False):
         "[bold green]Configuration saved![/bold green]",
         border_style="green"
     ))
+    console.print()
+    console.print("Run [cyan]causeway connect[/cyan] in your project directory to enable rules.")
+    console.print()
 
 
 def cmd_config(args: list[str]):
