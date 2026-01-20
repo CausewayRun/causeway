@@ -48,5 +48,11 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
 fi
 
 echo ""
-echo "Done! Run: causeway setup"
+echo "  ╔═══════════════════════════════════════╗"
+echo "  ║                                       ║"
+echo "  ║       Causeway installed!             ║"
+echo "  ║                                       ║"
+echo "  ╚═══════════════════════════════════════╝"
+echo ""
+echo "  Run 'causeway setup' to configure your environment"
 echo ""
