@@ -208,6 +208,7 @@ def interactive_setup():
 
 def cmd_connect():
     """Connect causeway to Claude Code."""
+    ensure_set_up("connect")
     from rich.console import Console
     from rich.panel import Panel
 
@@ -298,6 +299,7 @@ def cmd_rulesets():
 
 def cmd_add(ruleset: str):
     """Add a predefined ruleset."""
+    ensure_set_up('add')
     sys.path.insert(0, str(CAUSEWAY_DIR))
     from rulesets import RULESETS
     from db import get_connection, init_db
@@ -324,6 +326,7 @@ def cmd_add(ruleset: str):
 
 def cmd_list():
     """List active rules."""
+    ensure_set_up('list')
     sys.path.insert(0, str(CAUSEWAY_DIR))
     from db import get_connection, init_db
     init_db()
@@ -341,6 +344,7 @@ def cmd_list():
 
 def cmd_ui():
     """Start the dashboard UI."""
+    ensure_set_up('ui')
     env = os.environ.copy()
     env["CAUSEWAY_CWD"] = ORIG_CWD
     os.chdir(CAUSEWAY_DIR)
@@ -642,6 +646,34 @@ def cmd_config(args: list[str]):
     console.print(f"[red]Unknown config option: {args[0]}[/red]")
     console.print("Usage: causeway config [call-home [on|off]]")
 
+def ensure_set_up(command: str = None):
+    is_complete, missing = is_setup_complete()
+    
+    if not is_complete:
+        from rich.console import Console
+        from rich.panel import Panel
+        
+        console = Console()
+        console.print()
+        console.print(Panel.fit(
+            f"[bold red]Setup Required[/bold red]\n\n"
+            f"Missing configuration:\n" +
+            "\n".join(f"  • {item}" for item in missing) +
+            f"\n\n[dim]Run:[/dim] [cyan]causeway setup[/cyan]",
+            border_style="red",
+            padding=(1, 2)
+        ))
+        console.print()
+        sys.exit(1)
+
+def is_setup_complete() -> tuple[bool, list[str]]:
+    config = load_config()
+    missing = []
+    
+    if not config.get('OPENAI_API_KEY'):
+        missing.append("OpenAI API key not configured")
+    
+    return len(missing) == 0, missing
 
 def main():
     usage = """causeway - rule enforcement for Claude Code
