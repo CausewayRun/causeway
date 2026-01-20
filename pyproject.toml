@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Rule enforcement and learning for Claude Code"
 requires-python = ">=3.10"
 dependencies = [
-    "sqlite-vec",
+    "sqlite-vec>=0.1.7a2",  # 0.1.6 has broken aarch64 Linux wheel
     "numpy",
     "mcp",
     "pydantic-ai",
