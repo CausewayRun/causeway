@@ -4,18 +4,46 @@ import sqlite3
 from .db import get_connection, init_db, serialize_vector
 from .rule_agent import ensure_rule_embedding
 
+# Graceful MCP import - don't exit on import failure
+_MCP_AVAILABLE = False
+_MCP_IMPORT_ERROR = None
+Server = None
+stdio_server = None
+Tool = None
+TextContent = None
+
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
     from mcp.types import Tool, TextContent
-except ImportError:
-    print("Please install mcp: pip install mcp")
-    exit(1)
-
-server = Server("nano-brain")
+    _MCP_AVAILABLE = True
+except ImportError as e:
+    _MCP_IMPORT_ERROR = str(e)
 
 
-@server.list_tools()
+def require_mcp():
+    """Raise ImportError if MCP is not available."""
+    if not _MCP_AVAILABLE:
+        raise ImportError(f"MCP not available: {_MCP_IMPORT_ERROR}. Please install mcp: pip install mcp")
+
+
+def is_mcp_available():
+    """Check if MCP is available."""
+    return _MCP_AVAILABLE
+
+
+# Only create server if MCP is available
+server = Server("nano-brain") if _MCP_AVAILABLE else None
+
+
+def _list_tools_decorator(func):
+    """Apply server.list_tools decorator only if MCP is available."""
+    if server is not None:
+        return server.list_tools()(func)
+    return func
+
+
+@_list_tools_decorator
 async def list_tools():
     return [
         Tool(
@@ -195,7 +223,14 @@ async def list_tools():
     ]
 
 
-@server.call_tool()
+def _call_tool_decorator(func):
+    """Apply server.call_tool decorator only if MCP is available."""
+    if server is not None:
+        return server.call_tool()(func)
+    return func
+
+
+@_call_tool_decorator
 async def call_tool(name: str, arguments: dict):
     conn = get_connection()
     try:
@@ -362,7 +397,7 @@ async def call_tool(name: str, arguments: dict):
             return [TextContent(type="text", text=f"Rules ({len(rows)}):\n\n" + "\n\n".join(results))]
 
         elif name == "search_rules":
-            from rule_agent import generate_embedding
+            from .rule_agent import generate_embedding
             query = arguments["query"]
             limit = arguments.get("limit", 5)
 
@@ -490,6 +525,7 @@ async def call_tool(name: str, arguments: dict):
 
 
 async def main():
+    require_mcp()
     init_db()
     async with stdio_server() as (read_stream, write_stream):
         await server.run(read_stream, write_stream, server.create_initialization_options())
@@ -497,6 +533,7 @@ async def main():
 
 def run():
     """Entry point for causeway-mcp command."""
+    require_mcp()
     import asyncio
     asyncio.run(main())
 
