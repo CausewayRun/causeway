@@ -26,6 +26,23 @@ try:
 except ImportError:
     yaml = None
 
+import re
+
+# Patterns that might contain API keys or secrets
+SENSITIVE_PATTERNS = [
+    (r'(ANTHROPIC_API_KEY|OPENAI_API_KEY|API_KEY|SECRET|TOKEN|PASSWORD)([=:]\s*)[^\s\'"]+', r'\1\2[REDACTED]'),
+    (r'(sk-[a-zA-Z0-9]{20,})', '[REDACTED_KEY]'),
+    (r'(sk-ant-[a-zA-Z0-9-]{20,})', '[REDACTED_KEY]'),
+]
+
+
+def filter_sensitive_output(text: str) -> str:
+    """Remove potential API keys and secrets from output text."""
+    result = text
+    for pattern, replacement in SENSITIVE_PATTERNS:
+        result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+    return result
+
 
 def parse_yaml_simple(content: str) -> dict:
     """Simple YAML parser for basic key-value scenarios."""
@@ -283,9 +300,12 @@ def main():
 
     print(f"\nClaude Code exit code: {exit_code}")
     if stdout:
-        print(f"Stdout (first 500 chars): {stdout[:500]}")
+        # Filter potential API keys from output
+        safe_stdout = filter_sensitive_output(stdout[:500])
+        print(f"Stdout (first 500 chars): {safe_stdout}")
     if stderr:
-        print(f"Stderr (first 500 chars): {stderr[:500]}")
+        safe_stderr = filter_sensitive_output(stderr[:500])
+        print(f"Stderr (first 500 chars): {safe_stderr}")
 
     # Give a moment for DB writes to complete
     time.sleep(0.5)
