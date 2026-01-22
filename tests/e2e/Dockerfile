@@ -40,8 +40,9 @@ RUN mkdir -p /e2e/logs && chown -R testuser:testuser /e2e
 # Switch to testuser for remaining setup
 USER testuser
 
-# Install Causeway dependencies as testuser
+# Install Causeway dependencies as testuser with CPU-only PyTorch
 WORKDIR /causeway
+RUN uv pip install --system torch --index-url https://download.pytorch.org/whl/cpu
 RUN uv sync
 
 # Initialize git repo in test project
