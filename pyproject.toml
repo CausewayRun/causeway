@@ -8,7 +8,6 @@ dependencies = [
     "numpy",
     "mcp",
     "pydantic-ai",
-    "sentence-transformers",
     "fastapi",
     "uvicorn",
     "python-dotenv",
