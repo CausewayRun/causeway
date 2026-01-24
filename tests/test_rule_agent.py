@@ -155,3 +155,59 @@ def test_warn_only_rules():
     assert not passed
     assert action == 'warn'
     assert 'Use Rich' in reason
+
+
+def test_update_rule_embedding():
+    """Test the consolidated update_rule_embedding function."""
+    from causeway.rule_agent import update_rule_embedding
+    from unittest.mock import patch
+
+    mock_vec = [0.1] * 384
+    with patch('causeway.rule_agent.generate_embedding', return_value=mock_vec):
+        # 1. Create new embedding
+        update_rule_embedding(99, "Test rule description")
+        
+        conn = get_connection()
+        row = conn.execute("SELECT * FROM rule_embeddings WHERE rule_id = 99").fetchone()
+        assert row is not None
+        assert row['rule_id'] == 99
+        
+        # 2. Update existing embedding (force=True)
+        new_mock_vec = [0.2] * 384
+        with patch('causeway.rule_agent.generate_embedding', return_value=new_mock_vec):
+            update_rule_embedding(99, "Updated description", force=True)
+            row = conn.execute("SELECT * FROM rule_embeddings WHERE rule_id = 99").fetchone()
+            # serialize_vector uses float32, so we just check it was updated
+            from causeway.db import serialize_vector
+            assert row['embedding'] == serialize_vector(new_mock_vec)
+
+        # 3. Don't update if force=False
+        newer_mock_vec = [0.3] * 384
+        with patch('causeway.rule_agent.generate_embedding', return_value=newer_mock_vec):
+            update_rule_embedding(99, "Newer description", force=False)
+            row = conn.execute("SELECT * FROM rule_embeddings WHERE rule_id = 99").fetchone()
+            assert row['embedding'] == serialize_vector(new_mock_vec)
+            
+        conn.close()
+
+
+def test_sync_all_rule_embeddings():
+    """Test syncing all missing rule embeddings."""
+    from causeway.rule_agent import sync_all_rule_embeddings
+    from unittest.mock import patch
+
+    # Add rules without embeddings
+    conn = get_connection()
+    conn.execute("INSERT INTO rules (id, type, description, active) VALUES (101, 'semantic', 'Desc 101', 1)")
+    conn.execute("INSERT INTO rules (id, type, description, active) VALUES (102, 'semantic', 'Desc 102', 1)")
+    conn.commit()
+    conn.close()
+
+    mock_vec = [0.1] * 384
+    with patch('causeway.rule_agent.generate_embedding', return_value=mock_vec):
+        sync_all_rule_embeddings()
+        
+        conn = get_connection()
+        count = conn.execute("SELECT COUNT(*) FROM rule_embeddings WHERE rule_id IN (101, 102)").fetchone()[0]
+        assert count == 2
+        conn.close()
